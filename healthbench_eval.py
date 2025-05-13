@@ -31,9 +31,11 @@ from .sampler.chat_completion_sampler import (
     OPENAI_SYSTEM_MESSAGE_API,
     ChatCompletionSampler,
 )
-from .types import Eval, EvalResult, MessageList, SamplerBase, SingleEvalResult
+from .eval_types import Eval, EvalResult, MessageList, SamplerBase, SingleEvalResult
 
-INPUT_PATH = "https://openaipublic.blob.core.windows.net/simple-evals/healthbench/2025-05-07-06-14-12_oss_eval.jsonl"
+# INPUT_PATH = "https://openaipublic.blob.core.windows.net/simple-evals/healthbench/2025-05-07-06-14-12_oss_eval.jsonl"
+# INPUT_PATH = "https://objectstorageapi.bja.sealos.run/lct41gsb-public/healthbench_sample_data.jsonl"
+INPUT_PATH = "/usr/src/simple-evals/data/healthbench_sample_data.jsonl"
 INPUT_PATH_HARD = "https://openaipublic.blob.core.windows.net/simple-evals/healthbench/hard_2025-05-08-21-00-10.jsonl"
 INPUT_PATH_CONSENSUS = "https://openaipublic.blob.core.windows.net/simple-evals/healthbench/consensus_2025-05-09-20-00-46.jsonl"
 

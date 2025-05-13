@@ -14,7 +14,7 @@ from .healthbench_meta_eval import HealthBenchMetaEval
 from .math_eval import MathEval
 from .mgsm_eval import MGSMEval
 from .mmlu_eval import MMLUEval
-from .humaneval_eval import HumanEval
+# from .humaneval_eval import HumanEval
 from .sampler.chat_completion_sampler import (
     OPENAI_SYSTEM_MESSAGE_API,
     OPENAI_SYSTEM_MESSAGE_CHATGPT,
@@ -287,8 +287,8 @@ def main():
                     num_examples=10 if debug_mode else num_examples,
                     train_samples_per_prompt=3,
                 )
-            case "humaneval":
-                return HumanEval(num_examples=10 if debug_mode else num_examples)
+            # case "humaneval":
+            #     return HumanEval(num_examples=10 if debug_mode else num_examples)
             case "simpleqa":
                 return SimpleQAEval(
                     grader_model=grading_sampler,
@@ -351,7 +351,7 @@ def main():
                 "gpqa",
                 "mgsm",
                 "drop",
-                "humaneval",
+                # "humaneval",
                 "simpleqa",
                 "browsecomp",
                 "healthbench",
