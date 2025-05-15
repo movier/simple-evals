@@ -271,6 +271,7 @@ def main():
         model="gpt-4.1-2025-04-14",
         system_message=OPENAI_SYSTEM_MESSAGE_API,
         max_tokens=2048,
+        base_url="https://proxy.yeebotech.cn/openai/v1",
     )
     equality_checker = ChatCompletionSampler(model="gpt-4-turbo-preview")
     # ^^^ used for fuzzy matching, just for math
