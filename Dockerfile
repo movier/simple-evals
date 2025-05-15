@@ -9,4 +9,4 @@ COPY . .
 
 WORKDIR /usr/src
 
-CMD ["python", "-m", "simple-evals.simple_evals", "--eval=healthbench", "--model=deepseek-r1", "--examples", "1"]
+CMD ["python", "-m", "simple-evals.simple_evals", "--eval=healthbench", "--model=deepseek-r1", "--n-threads=1", "--examples=1"]
