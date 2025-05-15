@@ -233,6 +233,14 @@ def main():
         "claude-3-haiku-20240307": ClaudeCompletionSampler(
             model="claude-3-haiku-20240307",
         ),
+        "qwen3": ChatCompletionSampler(
+            model="qwen/qwen3-235b-a22b",
+            system_message=OPENAI_SYSTEM_MESSAGE_API,
+            max_tokens=2048,
+            temperature=0.6,
+            api_key_name="OPENROUTER_API_KEY",
+            base_url="https://openrouter.ai/api/v1",
+        ),
     }
 
     if args.list_models:
