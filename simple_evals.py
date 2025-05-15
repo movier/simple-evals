@@ -241,6 +241,14 @@ def main():
             api_key_name="OPENROUTER_API_KEY",
             base_url="https://openrouter.ai/api/v1",
         ),
+        "deepseek-r1": ChatCompletionSampler(
+            model="deepseek/deepseek-r1:free",
+            system_message=OPENAI_SYSTEM_MESSAGE_API,
+            max_tokens=2048,
+            temperature=0.6,
+            api_key_name="OPENROUTER_API_KEY",
+            base_url="https://openrouter.ai/api/v1",
+        ),
     }
 
     if args.list_models:
