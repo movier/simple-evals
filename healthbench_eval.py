@@ -21,6 +21,8 @@ from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from typing import Literal
+import time
+from tqdm import tqdm # <--- IMPORT TQDM
 
 import blobfile as bf
 import numpy as np
@@ -507,12 +509,48 @@ class HealthBenchEval(Eval):
                 },
             )
 
-        results = common.map_with_progress(
-            fn,
-            self.examples,
-            num_threads=self.n_threads,
-            pbar=True,
-        )
+        # results = common.map_with_progress(
+        #     fn,
+        #     self.examples,
+        #     num_threads=self.n_threads,
+        #     pbar=True,
+        # )
+
+        # --- MODIFICATION FOR SEQUENTIAL PROCESSING WITH SLEEP & TQDM PROGRESS BAR ---
+        results = []
+        num_total_examples = len(self.examples)
+        
+        if num_total_examples == 0:
+            print("No examples to process.")
+            # Return an empty or default EvalResult if appropriate
+            return _aggregate_get_clipped_mean([])
+
+
+        print(f"Starting HealthBench evaluation for {num_total_examples} examples sequentially with 60s delay...")
+        # The `desc` argument provides a description for the progress bar.
+        # `unit="example"` makes the progress bar say "X examples/s" or "X examples"
+        with tqdm(total=num_total_examples, desc="Evaluating HealthBench", unit="example") as pbar:
+            for i, example_row in enumerate(self.examples):
+                # Optional: Update tqdm description if you want to show current example info
+                # pbar.set_description(f"Evaluating HealthBench (Example {i+1}/{num_total_examples})")
+                
+                single_result = fn(example_row) # Process one example
+                results.append(single_result)
+                pbar.update(1) # Manually update the progress bar after processing one item
+
+                # Sleep for 60 seconds if it's not the last example
+                if i < num_total_examples - 1:
+                    # To make tqdm play nicely with sleep and print, you can clear the line or use tqdm.write
+                    pbar.set_postfix_str("Pausing for 60s...")
+                    # tqdm.write(f"Finished example {i + 1}. Pausing for 60 seconds...") # Alternative to postfix
+                    time.sleep(60)
+                    pbar.set_postfix_str("") # Clear the postfix after sleep
+                # else:
+                    # tqdm.write(f"Finished last example {i + 1}.") # Optional: message for the last one
+        
+        print("All examples processed.")
+        # --- END OF MODIFICATION ---
+
         final_metrics = _aggregate_get_clipped_mean(results)
         return final_metrics
 
