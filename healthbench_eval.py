@@ -21,6 +21,8 @@ from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from typing import Literal
+import time
+from tqdm import tqdm # <--- IMPORT TQDM
 
 import blobfile as bf
 import numpy as np
@@ -35,7 +37,7 @@ from .eval_types import Eval, EvalResult, MessageList, SamplerBase, SingleEvalRe
 
 # INPUT_PATH = "https://openaipublic.blob.core.windows.net/simple-evals/healthbench/2025-05-07-06-14-12_oss_eval.jsonl"
 # INPUT_PATH = "https://objectstorageapi.bja.sealos.run/lct41gsb-public/healthbench_sample_data.jsonl"
-INPUT_PATH = "/usr/src/simple-evals/data/healthbench_sample_data.json"
+INPUT_PATH = "/usr/src/simple-evals/data/2025-05-07-06-14-12_oss_eval.jsonl"
 INPUT_PATH_HARD = "https://openaipublic.blob.core.windows.net/simple-evals/healthbench/hard_2025-05-08-21-00-10.jsonl"
 INPUT_PATH_CONSENSUS = "https://openaipublic.blob.core.windows.net/simple-evals/healthbench/consensus_2025-05-09-20-00-46.jsonl"
 
@@ -168,14 +170,14 @@ def get_usage_dict(response_usage) -> dict[str, int | None]:
 
     try:
         return {
-            "input_tokens": response_usage.input_tokens,
-            "input_cached_tokens": response_usage.input_tokens_details.cached_tokens
-            if hasattr(response_usage.input_tokens_details, "cached_tokens")
-            else response_usage.input_tokens_details["cached_tokens"],
-            "output_tokens": response_usage.output_tokens,
-            "output_reasoning_tokens": response_usage.output_tokens_details.reasoning_tokens
-            if hasattr(response_usage.output_tokens_details, "reasoning_tokens")
-            else response_usage.output_tokens_details["reasoning_tokens"],
+            "input_tokens": response_usage.prompt_tokens,
+            # "input_cached_tokens": response_usage.input_tokens_details.cached_tokens
+            # if hasattr(response_usage.input_tokens_details, "cached_tokens")
+            # else response_usage.input_tokens_details["cached_tokens"],
+            "output_tokens": response_usage.completion_tokens,
+            # "output_reasoning_tokens": response_usage.output_tokens_details.reasoning_tokens
+            # if hasattr(response_usage.output_tokens_details, "reasoning_tokens")
+            # else response_usage.output_tokens_details["reasoning_tokens"],
             "total_tokens": response_usage.total_tokens,
         }
     except AttributeError:
@@ -299,7 +301,7 @@ class HealthBenchEval(Eval):
         for example in examples:
             example["rubrics"] = [RubricItem.from_dict(d) for d in example["rubrics"]]
 
-        rng = random.Random(0)
+        rng = random.Random()
 
         # physician completions mode
         self.physician_completions_mode = physician_completions_mode
@@ -507,12 +509,48 @@ class HealthBenchEval(Eval):
                 },
             )
 
-        results = common.map_with_progress(
-            fn,
-            self.examples,
-            num_threads=self.n_threads,
-            pbar=True,
-        )
+        # results = common.map_with_progress(
+        #     fn,
+        #     self.examples,
+        #     num_threads=self.n_threads,
+        #     pbar=True,
+        # )
+
+        # --- MODIFICATION FOR SEQUENTIAL PROCESSING WITH SLEEP & TQDM PROGRESS BAR ---
+        results = []
+        num_total_examples = len(self.examples)
+        
+        if num_total_examples == 0:
+            print("No examples to process.")
+            # Return an empty or default EvalResult if appropriate
+            return _aggregate_get_clipped_mean([])
+
+
+        print(f"Starting HealthBench evaluation for {num_total_examples} examples sequentially with 60s delay...")
+        # The `desc` argument provides a description for the progress bar.
+        # `unit="example"` makes the progress bar say "X examples/s" or "X examples"
+        with tqdm(total=num_total_examples, desc="Evaluating HealthBench", unit="example") as pbar:
+            for i, example_row in enumerate(self.examples):
+                # Optional: Update tqdm description if you want to show current example info
+                # pbar.set_description(f"Evaluating HealthBench (Example {i+1}/{num_total_examples})")
+                
+                single_result = fn(example_row) # Process one example
+                results.append(single_result)
+                pbar.update(1) # Manually update the progress bar after processing one item
+
+                # Sleep for 60 seconds if it's not the last example
+                if i < num_total_examples - 1:
+                    # To make tqdm play nicely with sleep and print, you can clear the line or use tqdm.write
+                    pbar.set_postfix_str("Pausing for 60s...")
+                    # tqdm.write(f"Finished example {i + 1}. Pausing for 60 seconds...") # Alternative to postfix
+                    time.sleep(60)
+                    pbar.set_postfix_str("") # Clear the postfix after sleep
+                # else:
+                    # tqdm.write(f"Finished last example {i + 1}.") # Optional: message for the last one
+        
+        print("All examples processed.")
+        # --- END OF MODIFICATION ---
+
         final_metrics = _aggregate_get_clipped_mean(results)
         return final_metrics
 
